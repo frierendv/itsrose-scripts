@@ -220,11 +220,14 @@ unset -v __venv_src __script_dir
 hash -r 2>/dev/null || true
 
 # Boot success telemetry
-__node_venv_log success "Node.js venv activated"
-__node_venv_log info "BIN: ${VIRTUAL_ENV}"
-__node_venv_log info "DIR: ${NODE_VENV_WORKING_DIR}"
+__node_venv_log success "Node.js virtual environment activated."
+__node_venv_log info "Binaries : ${VIRTUAL_ENV}"
+__node_venv_log info "Workdir  : ${NODE_VENV_WORKING_DIR}"
 echo ""
-printf "Commands: \033[1;32mload_env\033[0m <.env> | \033[1;32mreset_env\033[0m | \033[1;32mdeactivate\033[0m\n"
+__node_venv_log info "Available commands:"
+printf "  • \033[1;32mload_env\033[0m [file]   Load environment variables from file (default: .env)\n"
+printf "  • \033[1;32mreset_env\033[0m         Unload environment variables added by load_env\n"
+printf "  • \033[1;32mdeactivate\033[0m        Exit environment and restore shell configuration\n"
 
 # Leave no trace of initialization variables
 __node_venv_cleanup_internals
