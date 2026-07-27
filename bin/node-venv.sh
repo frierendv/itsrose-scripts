@@ -36,6 +36,15 @@ __node_venv_log() {
 }
 
 __node_venv_find_bin() {
+	if command -v npm >/dev/null 2>&1; then
+		local npm_modules
+		npm_modules="$(npm root 2>/dev/null)"
+		if [[ -n "$npm_modules" && -d "${npm_modules}/.bin" ]]; then
+			dirname "$npm_modules"
+			return 0
+		fi
+	fi
+	# fallback
 	local current_dir="$1"
 
 	while [[ -n "$current_dir" && "$current_dir" != "/" ]]; do
@@ -153,7 +162,7 @@ __proj_root="$(__node_venv_find_bin "$__start_dir")"
 
 if [[ -z "$__proj_root" ]]; then
 	__node_venv_log error "No node_modules/.bin found upward from: $__start_dir"
-	__node_venv_log info "Run 'npm install' or 'pnpm install' first."
+	__node_venv_log info "Run 'npm install' first."
 	__node_venv_cleanup_internals
 	unset -v __start_dir __proj_root
 	return 1
