@@ -5,22 +5,17 @@
 # Sourced entrypoint script to locate and activate node-venv.sh
 # ==============================================================================
 
-# The script name for node-venv
+# The script name
 _NODE_VENV_SCRIPT="node-venv.sh"
+_NODE_NPM_HELPER_SCRIPT="node-npm-helper.sh"
 
 __activate_main() {
 	# Ensure the script is sourced, not executed (supports Bash and Zsh)
 	local __is_sourced=0
 	if [[ -n "${BASH_SOURCE[0]:-}" && "${BASH_SOURCE[0]}" != "${0}" ]]; then
 		__is_sourced=1
-	elif [[ -n "${ZSH_EVAL_CONTEXT:-}" ]]; then
+	elif [[ -n "${ZSH_VERSION:-}" && "$ZSH_EVAL_CONTEXT" == *:file* ]]; then
 		__is_sourced=1
-	fi
-
-	if [[ "$__is_sourced" -eq 0 ]]; then
-		printf "\033[1;31m[x] Error:\033[0m This script must be sourced, not executed.\n" >&2
-		printf "Usage: source %s\n" "${0}" >&2
-		exit 1
 	fi
 
 	# Resolve source script location reliably in Bash and Zsh
@@ -29,7 +24,13 @@ __activate_main() {
 		eval '__activate_src="${(%):-%x}"'
 	fi
 
-	local __activate_dir __venv_script
+	if [[ "$__is_sourced" -eq 0 ]]; then
+		printf "\033[1;31m[x] Error:\033[0m This script must be sourced, not executed.\n" >&2
+		printf "Usage: source %s\n" "${__activate_src:-$0}" >&2
+		exit 1
+	fi
+
+	local __activate_dir __venv_script __npm_helper_script
 	__activate_dir="$(cd -- "$(dirname -- "${__activate_src:-$0}")" 2>/dev/null && pwd -P)"
 	__venv_script="${__activate_dir}/$_NODE_VENV_SCRIPT"
 
@@ -40,8 +41,14 @@ __activate_main() {
 		printf "\033[1;31m[x] Error:\033[0m Virtual environment script not found at: %s\n" "$__venv_script" >&2
 		return 1
 	fi
+
+	__npm_helper_script="${__activate_dir}/$_NODE_NPM_HELPER_SCRIPT"
+
+	if [[ -f "$__npm_helper_script" ]]; then
+		source "$__npm_helper_script" "$@"
+	fi
 }
 
 __activate_main "$@"
 unset -f __activate_main
-unset -v _NODE_VENV_SCRIPT
+unset -v _NODE_VENV_SCRIPT _NODE_NPM_HELPER_SCRIPT

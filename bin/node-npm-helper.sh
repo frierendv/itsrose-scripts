@@ -4,6 +4,20 @@
 # Overrides npm publish & unpublish commands to work with local package registries.
 # ==============================================================================
 
+# Ensure logging function is available even if sourced independently
+if ! type __node_venv_log >/dev/null 2>&1; then
+	__node_venv_log() {
+		local level="$1"
+		shift
+		case "$level" in
+		info) printf "\033[1;36m[i]\033[0m %s\n" "$*" ;;
+		success) printf "\033[1;32m[✔]\033[0m %s\n" "$*" ;;
+		warn) printf "\033[1;33m[!]\033[0m %s\n" "$*" ;;
+		error) printf "\033[1;31m[x]\033[0m %s\n" "$*" >&2 ;;
+		esac
+	}
+fi
+
 __node_venv_check_dependencies() {
 	local missing=()
 	local cmd
@@ -18,6 +32,7 @@ __node_venv_check_dependencies() {
 		__node_venv_log error "Please install required tools before running this command."
 		return 1
 	fi
+	return 0
 }
 
 __node_venv_check_registry() {
@@ -27,6 +42,7 @@ __node_venv_check_registry() {
 		__node_venv_log error "Please start your local registry before running this command."
 		return 1
 	fi
+	return 0
 }
 
 __node_venv_npm_get_workspaces() {
@@ -73,7 +89,7 @@ __node_venv_npm_process_packages() {
 			__node_venv_log success "Successfully ${action}ed: $pkg"
 		else
 			local cleaned_output
-			cleaned_output=$(echo "$output" | sed 's/npm ERR! //' | tr '\n' ' ' | sed 's/  *//g')
+			cleaned_output=$(echo "$output" | sed 's/npm ERR! //g' | tr '\n' ' ' | sed -e 's/[[:space:]]\+/ /g' -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
 			if [[ "$action" == "unpublish" ]]; then
 				__node_venv_log info "Skipped $pkg: ${cleaned_output:-unpublish failed}"
 			else
